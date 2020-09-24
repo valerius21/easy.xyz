@@ -3,31 +3,32 @@ package shortener
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 )
 
-//func main() {
-// Start HTTP Server
-// Provide Start Page
+type Server struct {
+	//RedirectHandler func(w http.ResponseWriter, r *http.Request)
+	URLs URLDictionary
+}
 
-// If URL is requested
-// Lookup in DB
-// Redirect if entry is found
-// Else 404
+func (s Server) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, error error) {
+	clearedURL := strings.ReplaceAll(r.URL.String(), "/", "")
+	targetURL, error = s.URLs.Lookup(clearedURL)
 
-// Provide POST add endpoint
-// Look in DB
-// Response if name is free with new url
+	if error != nil {
+		return "", error
+	}
 
-//}
+	http.Redirect(w, r, targetURL, 301)
+	return targetURL, nil
+}
 
-// ShortServer listens and serves the shortener
-//func ShortServer(w http.ResponseWriter, r *http.Request) {
-//	//http.Redirect(w,r, , 302)
-//}
-
+// URLDictionary which holds the shorthands and the destination URLs
 type URLDictionary map[string]string
 
-func (urls URLDictionary) LookupURL(shortURL string) (string, error) {
+// Lookup a given url in the URLDictionary
+func (urls URLDictionary) Lookup(shortURL string) (string, error) {
 	destinationURL, ok := urls[shortURL]
 
 	if !ok {

@@ -2,35 +2,38 @@ package shortener
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-var urls = URLDictionary{
+var server = Server{URLs: URLDictionary{
 	"go":  "https://google.de/",
 	"hmm": "https://wikipedia.org/",
 	"bin": "https://httpbin.org/",
-}
+}}
 
-func TestGETUrl(t *testing.T) {
+func TestGetURL(t *testing.T) {
+	t.Run("Getting the given URLs", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/go", nil)
+		response := httptest.NewRecorder()
 
-	//t.Run("Getting the given URLs", func(t *testing.T) {
-	//	request, _ := http.NewRequest(http.MethodGet, "/go", nil)
-	//	response := httptest.NewRecorder()
-	//
-	//	ShortServer(response, request)
-	//
-	//	got := response.Result().StatusCode
-	//	want := 302 // redirect status code
-	//
-	//	if got != want {
-	//		t.Errorf("got %d, wanted %d", got, want)
-	//	}
-	//})
+		gotDest, err := server.GetURL(response, request)
+		wantDest := "https://google.de/"
+
+		assertNoError(t, err)
+
+		got := response.Result().StatusCode
+		want := 301 // redirect status code
+
+		assertInt(t, got, want)
+		assertStrings(t, gotDest, wantDest)
+	})
 }
 
 func TestLookup(t *testing.T) {
 	t.Run("Lookup and find", func(t *testing.T) {
-		got, err := urls.LookupURL("bin")
+		got, err := server.URLs.Lookup("bin")
 		want := "https://httpbin.org/"
 
 		assertNoError(t, err)
@@ -39,7 +42,7 @@ func TestLookup(t *testing.T) {
 
 	t.Run("Lookup non existing key", func(t *testing.T) {
 		url := "unknown"
-		_, err := urls.LookupURL(url)
+		_, err := server.URLs.Lookup(url)
 		want := fmt.Sprintf("could not find the proper URL for %s (unknown)", url)
 
 		assertError(t, err)
@@ -72,5 +75,11 @@ func assertSuccessfulLookup(t *testing.T, got string, want string) {
 	t.Helper()
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func assertInt(t *testing.T, got int, want int) {
+	if got != want {
+		t.Errorf("got %d, wanted %d", got, want)
 	}
 }
