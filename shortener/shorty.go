@@ -8,15 +8,16 @@ import (
 )
 
 type Server struct {
-	//RedirectHandler func(w http.ResponseWriter, r *http.Request)
 	URLs URLDictionary
 }
 
+// GetURL redirects to the requested URL
 func (s Server) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, error error) {
 	clearedURL := strings.ReplaceAll(r.URL.String(), "/", "")
 	targetURL, error = s.URLs.Lookup(clearedURL)
 
 	if error != nil {
+		http.NotFound(w, r)
 		return "", error
 	}
 

@@ -29,6 +29,20 @@ func TestGetURL(t *testing.T) {
 		assertInt(t, got, want)
 		assertStrings(t, gotDest, wantDest)
 	})
+
+	t.Run("Requesting a non-existing shortcut", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/lol", nil)
+		response := httptest.NewRecorder()
+
+		_, err := server.GetURL(response, request)
+
+		assertError(t, err)
+
+		got := response.Result().StatusCode
+		want := 404
+
+		assertInt(t, got, want)
+	})
 }
 
 func TestLookup(t *testing.T) {
