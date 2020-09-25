@@ -17,16 +17,16 @@ func TestGetURL(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		response := httptest.NewRecorder()
 
-		gotDest, err := shortServer.GetURL(response, request)
-		wantDest := "http://test.local/"
+		actualDest, err := shortServer.GetURL(response, request)
+		expectedDest := "http://test.local/"
 
 		assert.Nil(t, err)
 
-		got := response.Result().StatusCode
-		want := 308 // redirect status code
+		actual := response.Result().StatusCode
+		expected := 308 // redirect status code
 
-		assert.Equal(t, got, want)
-		assert.Equal(t, gotDest, wantDest)
+		assert.Equal(t, expected, actual)
+		assert.Equal(t, expectedDest, actualDest)
 	})
 
 	t.Run("Requesting a non-existing shortcut", func(t *testing.T) {
@@ -37,27 +37,27 @@ func TestGetURL(t *testing.T) {
 
 		assert.NotNil(t, err)
 
-		got := response.Result().StatusCode
-		want := 404
-		assert.Equal(t, got, want)
+		actual := response.Result().StatusCode
+		expected := 404
+		assert.Equal(t, expected, actual)
 	})
 }
 
 func TestLookup(t *testing.T) {
 	t.Run("Lookup and find", func(t *testing.T) {
-		got, err := shortServer.URLs.Lookup("test")
-		want := "http://test.local/"
+		actual, err := shortServer.URLs.Lookup("test")
+		expected := "http://test.local/"
 
 		assert.Nil(t, err)
-		assert.Equal(t, got, want)
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("Lookup non existing key", func(t *testing.T) {
 		url := "unknown"
 		_, err := shortServer.URLs.Lookup(url)
-		want := fmt.Sprintf("could not find the proper URL for %s (unknown)", url)
+		expected := fmt.Sprintf("could not find the proper URL for %s (unknown)", url)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, err.Error(), want)
+		assert.Equal(t, err.Error(), expected)
 	})
 }
