@@ -3,39 +3,43 @@ package shortener
 import (
 	"errors"
 	"fmt"
+	"github.com/boltdb/bolt"
 	"net/http"
 	"strings"
 )
 
 type ShortServer struct {
-	URLs URLDictionary
+	DB *bolt.DB
 }
 
 // GetURL redirects to the requested URL
-func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, error error) {
-	clearedURL := strings.ReplaceAll(r.URL.String(), "/", "")
-	targetURL, error = s.URLs.Lookup(clearedURL)
+func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, err error) {
+	targetURL, err = s.Lookup(r.URL.String())
 
-	if error != nil {
+	if err != nil {
 		http.NotFound(w, r)
-		return "", error
+		return "", err
 	}
 
 	http.Redirect(w, r, targetURL, 308)
 	return targetURL, nil
 }
 
-// URLDictionary which holds the shorthands and the destination URLs
-type URLDictionary map[string]string
+func (s ShortServer) Lookup(url string) (targetURL string, err error) {
+	clearedURL := strings.ReplaceAll(url, "/", "")
 
-// Lookup a given url in the URLDictionary
-func (urls URLDictionary) Lookup(shortURL string) (string, error) {
-	destinationURL, ok := urls[shortURL]
+	err = s.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("urls"))
+		v := b.Get([]byte(clearedURL))
 
-	if !ok {
-		errorMessage := fmt.Sprintf("could not find the proper URL for %s (unknown)", shortURL)
-		return "", errors.New(errorMessage)
-	}
+		if v == nil {
+			errorMessage := fmt.Sprintf("could not find the proper URL for %s (unknown)", clearedURL)
+			return errors.New(errorMessage)
+		}
 
-	return destinationURL, nil
+		targetURL = string(v)
+		return nil
+	})
+
+	return targetURL, err
 }
