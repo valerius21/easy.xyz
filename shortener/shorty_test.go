@@ -16,8 +16,8 @@ func TestGetURL(t *testing.T) {
 	db, path := setupDatabase(t)
 	shortServer := ShortServer{DB: db}
 
-	defer assert.NoError(t, db.Close())
-	defer assert.NoError(t, os.RemoveAll(path))
+	defer db.Close()
+	defer os.RemoveAll(path)
 
 	t.Run("Getting the given URLs", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/test", nil)
@@ -53,8 +53,8 @@ func TestLookup(t *testing.T) {
 	db, path := setupDatabase(t)
 	shortServer := ShortServer{DB: db}
 
-	defer assert.NoError(t, db.Close())
-	defer assert.NoError(t, os.RemoveAll(path))
+	defer db.Close()
+	defer os.RemoveAll(path)
 
 	t.Run("Lookup and find", func(t *testing.T) {
 		expected := "https://test.local/"
