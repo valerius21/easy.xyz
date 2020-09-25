@@ -1,25 +1,24 @@
 package main
 
-import (
-	"github.com/valerius21/shorty/shortener"
-	"log"
-	"net/http"
-)
-
-var server = shortener.ShortServer{URLs: shortener.URLDictionary{
-	"lol": "htts://httpbin.org/",
-}}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	_, _ = server.GetURL(w, r)
-}
+//import (
+//	"github.com/valerius21/shorty/shortener"
+//	"net/http"
+//)
+//
+//var server = shortener.ShortServer{URLs: shortener.URLDictionary{
+//	"lol": "htts://httpbin.org/",
+//}}
+//
+//func handler(w http.ResponseWriter, r *http.Request) {
+//	_, _ = server.GetURL(w, r)
+//}
 
 func main() {
 	// Start HTTP ShortServer
-	handler := http.HandlerFunc(handler)
-	if err := http.ListenAndServe(":5000", handler); err != nil {
-		log.Fatalf("could not listen on port 5000 %v", err)
-	}
+	//handler := http.HandlerFunc(handler)
+	//if err := http.ListenAndServe(":5000", handler); err != nil {
+	//	log.Fatalf("could not listen on port 5000 %v", err)
+	//}
 	// Provide Start Page
 
 	// If URL is requested
