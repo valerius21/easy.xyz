@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-type Server struct {
+type ShortServer struct {
 	URLs URLDictionary
 }
 
 // GetURL redirects to the requested URL
-func (s Server) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, error error) {
+func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, error error) {
 	clearedURL := strings.ReplaceAll(r.URL.String(), "/", "")
 	targetURL, error = s.URLs.Lookup(clearedURL)
 
@@ -21,7 +21,7 @@ func (s Server) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string
 		return "", error
 	}
 
-	http.Redirect(w, r, targetURL, 301)
+	http.Redirect(w, r, targetURL, 308)
 	return targetURL, nil
 }
 

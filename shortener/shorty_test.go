@@ -7,34 +7,32 @@ import (
 	"testing"
 )
 
-var server = Server{URLs: URLDictionary{
-	"go":  "https://google.de/",
-	"hmm": "https://wikipedia.org/",
-	"bin": "https://httpbin.org/",
+var shortServer = ShortServer{URLs: URLDictionary{
+	"test": "http://test.local/",
 }}
 
 func TestGetURL(t *testing.T) {
 	t.Run("Getting the given URLs", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/go", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		response := httptest.NewRecorder()
 
-		gotDest, err := server.GetURL(response, request)
-		wantDest := "https://google.de/"
+		gotDest, err := shortServer.GetURL(response, request)
+		wantDest := "http://test.local/"
 
 		assertNoError(t, err)
 
 		got := response.Result().StatusCode
-		want := 301 // redirect status code
+		want := 308 // redirect status code
 
 		assertInt(t, got, want)
 		assertStrings(t, gotDest, wantDest)
 	})
 
 	t.Run("Requesting a non-existing shortcut", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/lol", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/unknown", nil)
 		response := httptest.NewRecorder()
 
-		_, err := server.GetURL(response, request)
+		_, err := shortServer.GetURL(response, request)
 
 		assertError(t, err)
 
@@ -47,8 +45,8 @@ func TestGetURL(t *testing.T) {
 
 func TestLookup(t *testing.T) {
 	t.Run("Lookup and find", func(t *testing.T) {
-		got, err := server.URLs.Lookup("bin")
-		want := "https://httpbin.org/"
+		got, err := shortServer.URLs.Lookup("test")
+		want := "http://test.local/"
 
 		assertNoError(t, err)
 		assertSuccessfulLookup(t, got, want)
@@ -56,7 +54,7 @@ func TestLookup(t *testing.T) {
 
 	t.Run("Lookup non existing key", func(t *testing.T) {
 		url := "unknown"
-		_, err := server.URLs.Lookup(url)
+		_, err := shortServer.URLs.Lookup(url)
 		want := fmt.Sprintf("could not find the proper URL for %s (unknown)", url)
 
 		assertError(t, err)
