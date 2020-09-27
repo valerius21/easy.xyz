@@ -12,6 +12,11 @@ type ShortServer struct {
 	DB *bolt.DB
 }
 
+type URLPair struct {
+	shorthand string
+	target    string
+}
+
 // GetURL redirects to the requested URL
 func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, err error) {
 	targetURL, err = s.Lookup(r.URL.String())
@@ -25,8 +30,9 @@ func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL s
 	return targetURL, nil
 }
 
-func (s ShortServer) Lookup(url string) (targetURL string, err error) {
-	clearedURL := strings.ReplaceAll(url, "/", "")
+// Lookup an URL for a given shorthand
+func (s ShortServer) Lookup(shorthand string) (targetURL string, err error) {
+	clearedURL := strings.ReplaceAll(shorthand, "/", "")
 
 	err = s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("urls"))
@@ -42,4 +48,18 @@ func (s ShortServer) Lookup(url string) (targetURL string, err error) {
 	})
 
 	return targetURL, err
+}
+
+func (s ShortServer) Add(urlPair URLPair) (err error) {
+	return s.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte("urls"))
+		if err != nil {
+			return err
+		}
+		err = bucket.Put([]byte(urlPair.shorthand), []byte(urlPair.target))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

@@ -73,6 +73,22 @@ func TestLookup(t *testing.T) {
 	})
 }
 
+func TestAdd(t *testing.T) {
+	db, path := setupDatabase(t)
+	shortServer := ShortServer{DB: db}
+
+	defer db.Close()
+	defer os.RemoveAll(path)
+
+	urlPair := URLPair{shorthand: "foo", target: "https://bar.local/"}
+
+	err := shortServer.Add(urlPair)
+	assert.NoError(t, err)
+	actual, err := shortServer.Lookup(urlPair.shorthand)
+	assert.NoError(t, err)
+	assert.Equal(t, urlPair.target, actual)
+}
+
 func setupDatabase(t *testing.T) (*bolt.DB, string) {
 	t.Helper()
 	// using tmp files for integration testing
