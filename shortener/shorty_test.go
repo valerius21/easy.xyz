@@ -25,25 +25,19 @@ func TestGetURL(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		response := httptest.NewRecorder()
 
-		actualDest, err := shortServer.GetURL(response, request)
-		expectedDest := "https://test.local/"
-
-		assert.NoError(t, err)
+		shortServer.GetURL(response, request)
 
 		actual := response.Result().StatusCode
 		expected := http.StatusPermanentRedirect // redirect status code
 
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, expectedDest, actualDest)
 	})
 
 	t.Run("Requesting a non-existing shortcut", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/unknown", nil)
 		response := httptest.NewRecorder()
 
-		_, err := shortServer.GetURL(response, request)
-
-		assert.Error(t, err)
+		shortServer.GetURL(response, request)
 
 		actual := response.Result().StatusCode
 		expected := http.StatusNotFound
@@ -91,26 +85,12 @@ func TestAddURL(t *testing.T) {
 		response := httptest.NewRecorder()
 		assert.NoError(t, err)
 
-		message, err := shortServer.AddURL(response, request)
+		shortServer.AddURL(response, request)
 		assert.NoError(t, err)
 
 		expected := http.StatusOK
 		actual := response.Result().StatusCode
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, fmt.Sprintf("%s/%s", shortServer.URL, urlPair.Shorthand), message)
-
-		verifyRequest, err := http.NewRequest(http.MethodGet,
-			fmt.Sprintf("/%s", urlPair.Shorthand), nil)
-		assert.NoError(t, err)
-
-		response = httptest.NewRecorder()
-		targetURL, err := shortServer.GetURL(response, verifyRequest)
-		assert.NoError(t, err)
-
-		expected = http.StatusPermanentRedirect
-		actual = response.Result().StatusCode
-		assert.Equal(t, expected, actual)
-		assert.Equal(t, urlPair.Target, targetURL)
 	})
 
 	t.Run("Adding an existing URL", func(t *testing.T) {
@@ -122,13 +102,11 @@ func TestAddURL(t *testing.T) {
 		response := httptest.NewRecorder()
 		assert.NoError(t, err)
 
-		message, err := shortServer.AddURL(response, request)
-		assert.Error(t, err)
+		shortServer.AddURL(response, request)
 
 		expected := http.StatusConflict
 		actual := response.Result().StatusCode
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, "", message)
 	})
 
 	t.Run("Empty fields", func(t *testing.T) {
