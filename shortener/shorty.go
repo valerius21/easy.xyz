@@ -44,7 +44,7 @@ func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) (message str
 	err = s.Add(urlPair)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusConflict)
 		return "", err
 	}
 
@@ -74,14 +74,26 @@ func (s ShortServer) Lookup(shorthand string) (targetURL string, err error) {
 // Add an urlPair to the Database
 func (s ShortServer) Add(urlPair URLPair) (err error) {
 	return s.DB.Update(func(tx *bolt.Tx) error {
+		targetURL, err := s.Lookup(urlPair.Shorthand)
+		if err != nil && err.Error() != fmt.Sprintf("could not find the proper URL for %s (unknown)",
+			urlPair.Shorthand) {
+			return err
+		}
+
+		if targetURL != "" {
+			return errors.New(fmt.Sprintf("%s does already exist!", urlPair.Shorthand))
+		}
+
 		bucket, err := tx.CreateBucketIfNotExists([]byte("urls"))
 		if err != nil {
 			return err
 		}
+
 		err = bucket.Put([]byte(urlPair.Shorthand), []byte(urlPair.Target))
 		if err != nil {
 			return err
 		}
+
 		return nil
 	})
 }

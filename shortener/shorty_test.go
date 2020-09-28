@@ -31,7 +31,7 @@ func TestGetURL(t *testing.T) {
 		assert.NoError(t, err)
 
 		actual := response.Result().StatusCode
-		expected := 308 // redirect status code
+		expected := http.StatusPermanentRedirect // redirect status code
 
 		assert.Equal(t, expected, actual)
 		assert.Equal(t, expectedDest, actualDest)
@@ -46,7 +46,7 @@ func TestGetURL(t *testing.T) {
 		assert.Error(t, err)
 
 		actual := response.Result().StatusCode
-		expected := 404
+		expected := http.StatusNotFound
 		assert.Equal(t, expected, actual)
 	})
 }
@@ -94,7 +94,7 @@ func TestAddURL(t *testing.T) {
 		message, err := shortServer.AddURL(response, request)
 		assert.NoError(t, err)
 
-		expected := 200
+		expected := http.StatusOK
 		actual := response.Result().StatusCode
 		assert.Equal(t, expected, actual)
 		assert.Equal(t, "OK", message)
@@ -107,14 +107,28 @@ func TestAddURL(t *testing.T) {
 		targetURL, err := shortServer.GetURL(response, verifyRequest)
 		assert.NoError(t, err)
 
-		expected = 308
+		expected = http.StatusPermanentRedirect
 		actual = response.Result().StatusCode
 		assert.Equal(t, expected, actual)
 		assert.Equal(t, urlPair.Target, targetURL)
 	})
 
 	t.Run("Adding an existing URL", func(t *testing.T) {
+		urlPair := URLPair{Shorthand: "test", Target: "https://test.local/"}
+		jsonPair, err := json.Marshal(urlPair)
+		assert.NoError(t, err)
 
+		request, err := http.NewRequest(http.MethodPost, "/add", bytes.NewBuffer(jsonPair))
+		response := httptest.NewRecorder()
+		assert.NoError(t, err)
+
+		message, err := shortServer.AddURL(response, request)
+		assert.Error(t, err)
+
+		expected := http.StatusConflict
+		actual := response.Result().StatusCode
+		assert.Equal(t, expected, actual)
+		assert.Equal(t, "", message)
 	})
 
 	t.Run("Empty fields", func(t *testing.T) {
@@ -125,17 +139,23 @@ func TestAddURL(t *testing.T) {
 func TestAdd(t *testing.T) {
 	db, path := setupDatabase(t)
 	shortServer := ShortServer{DB: db}
-
 	defer db.Close()
 	defer os.RemoveAll(path)
+	t.Run("Adding a new Pair", func(t *testing.T) {
+		urlPair := URLPair{Shorthand: "foo", Target: "https://bar.local/"}
 
-	urlPair := URLPair{Shorthand: "foo", Target: "https://bar.local/"}
+		err := shortServer.Add(urlPair)
+		assert.NoError(t, err)
+		actual, err := shortServer.Lookup(urlPair.Shorthand)
+		assert.NoError(t, err)
+		assert.Equal(t, urlPair.Target, actual)
+	})
 
-	err := shortServer.Add(urlPair)
-	assert.NoError(t, err)
-	actual, err := shortServer.Lookup(urlPair.Shorthand)
-	assert.NoError(t, err)
-	assert.Equal(t, urlPair.Target, actual)
+	t.Run("Adding an existing Pair", func(t *testing.T) {
+		urlPair := URLPair{Shorthand: "test", Target: "https://test.local/"}
+		err := shortServer.Add(urlPair)
+		assert.Error(t, err)
+	})
 }
 
 func setupDatabase(t *testing.T) (*bolt.DB, string) {
