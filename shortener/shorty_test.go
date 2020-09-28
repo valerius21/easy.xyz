@@ -16,7 +16,7 @@ import (
 
 func TestGetURL(t *testing.T) {
 	db, path := setupDatabase(t)
-	shortServer := ShortServer{DB: db}
+	shortServer := ShortServer{DB: db, URL: "easy.xyz"}
 
 	defer db.Close()
 	defer os.RemoveAll(path)
@@ -53,7 +53,7 @@ func TestGetURL(t *testing.T) {
 
 func TestLookup(t *testing.T) {
 	db, path := setupDatabase(t)
-	shortServer := ShortServer{DB: db}
+	shortServer := ShortServer{DB: db, URL: "easy.xyz"}
 
 	defer db.Close()
 	defer os.RemoveAll(path)
@@ -77,7 +77,7 @@ func TestLookup(t *testing.T) {
 
 func TestAddURL(t *testing.T) {
 	db, path := setupDatabase(t)
-	shortServer := ShortServer{DB: db}
+	shortServer := ShortServer{DB: db, URL: "easy.xyz"}
 
 	defer db.Close()
 	defer os.RemoveAll(path)
@@ -97,7 +97,7 @@ func TestAddURL(t *testing.T) {
 		expected := http.StatusOK
 		actual := response.Result().StatusCode
 		assert.Equal(t, expected, actual)
-		assert.Equal(t, "OK", message)
+		assert.Equal(t, fmt.Sprintf("%s/%s", shortServer.URL, urlPair.Shorthand), message)
 
 		verifyRequest, err := http.NewRequest(http.MethodGet,
 			fmt.Sprintf("/%s", urlPair.Shorthand), nil)
@@ -138,7 +138,8 @@ func TestAddURL(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	db, path := setupDatabase(t)
-	shortServer := ShortServer{DB: db}
+	shortServer := ShortServer{DB: db, URL: "easy.xyz"}
+
 	defer db.Close()
 	defer os.RemoveAll(path)
 	t.Run("Adding a new Pair", func(t *testing.T) {

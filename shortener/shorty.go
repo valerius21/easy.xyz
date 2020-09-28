@@ -10,7 +10,8 @@ import (
 )
 
 type ShortServer struct {
-	DB *bolt.DB
+	DB  *bolt.DB
+	URL string
 }
 
 type URLPair struct {
@@ -31,6 +32,7 @@ func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL s
 	return targetURL, nil
 }
 
+// AddURL adds an URL to the database.
 func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) (message string, err error) {
 	var urlPair URLPair
 
@@ -48,7 +50,7 @@ func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) (message str
 		return "", err
 	}
 
-	return "OK", nil
+	return fmt.Sprintf("%s/%s", s.URL, urlPair.Shorthand), nil
 }
 
 // Lookup an URL for a given Shorthand

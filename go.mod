@@ -1,4 +1,4 @@
-module github.com/valerius21/shorty
+module github.com/valerius21/easy.xyz
 
 go 1.15
 
