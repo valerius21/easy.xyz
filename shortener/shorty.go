@@ -1,6 +1,7 @@
 package shortener
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
@@ -13,8 +14,8 @@ type ShortServer struct {
 }
 
 type URLPair struct {
-	shorthand string
-	target    string
+	Shorthand string
+	Target    string
 }
 
 // GetURL redirects to the requested URL
@@ -30,7 +31,27 @@ func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL s
 	return targetURL, nil
 }
 
-// Lookup an URL for a given shorthand
+func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) (message string, err error) {
+	var urlPair URLPair
+
+	err = json.NewDecoder(r.Body).Decode(&urlPair)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return "", err
+	}
+
+	err = s.Add(urlPair)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return "", err
+	}
+
+	return "OK", nil
+}
+
+// Lookup an URL for a given Shorthand
 func (s ShortServer) Lookup(shorthand string) (targetURL string, err error) {
 	clearedURL := strings.ReplaceAll(shorthand, "/", "")
 
@@ -50,13 +71,14 @@ func (s ShortServer) Lookup(shorthand string) (targetURL string, err error) {
 	return targetURL, err
 }
 
+// Add an urlPair to the Database
 func (s ShortServer) Add(urlPair URLPair) (err error) {
 	return s.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte("urls"))
 		if err != nil {
 			return err
 		}
-		err = bucket.Put([]byte(urlPair.shorthand), []byte(urlPair.target))
+		err = bucket.Put([]byte(urlPair.Shorthand), []byte(urlPair.Target))
 		if err != nil {
 			return err
 		}

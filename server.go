@@ -21,12 +21,14 @@ func main() {
 	//}
 	// Provide Start Page
 
-	// If URL is requested
-	// Lookup in DB
+	// If URL is requested [DONE]
+	// Lookup in DB [DONE]
 	// Redirect if entry is found [DONE]
 	// Else 404 [DONE]
 
 	// Provide POST add endpoint
 	// Look in DB
-	// Response if name is free with new url
+	// Response if name is free with new url else error
+
+	// Backup DB Daemon
 }

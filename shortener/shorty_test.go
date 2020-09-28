@@ -1,6 +1,8 @@
 package shortener
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/stretchr/testify/assert"
@@ -73,6 +75,53 @@ func TestLookup(t *testing.T) {
 	})
 }
 
+func TestAddURL(t *testing.T) {
+	db, path := setupDatabase(t)
+	shortServer := ShortServer{DB: db}
+
+	defer db.Close()
+	defer os.RemoveAll(path)
+
+	t.Run("Adding an URL", func(t *testing.T) {
+		urlPair := URLPair{Shorthand: "foo", Target: "https://bar.local/"}
+		jsonPair, err := json.Marshal(urlPair)
+		assert.NoError(t, err)
+
+		request, err := http.NewRequest(http.MethodPost, "/add", bytes.NewBuffer(jsonPair))
+		response := httptest.NewRecorder()
+		assert.NoError(t, err)
+
+		message, err := shortServer.AddURL(response, request)
+		assert.NoError(t, err)
+
+		expected := 200
+		actual := response.Result().StatusCode
+		assert.Equal(t, expected, actual)
+		assert.Equal(t, "OK", message)
+
+		verifyRequest, err := http.NewRequest(http.MethodGet,
+			fmt.Sprintf("/%s", urlPair.Shorthand), nil)
+		assert.NoError(t, err)
+
+		response = httptest.NewRecorder()
+		targetURL, err := shortServer.GetURL(response, verifyRequest)
+		assert.NoError(t, err)
+
+		expected = 308
+		actual = response.Result().StatusCode
+		assert.Equal(t, expected, actual)
+		assert.Equal(t, urlPair.Target, targetURL)
+	})
+
+	t.Run("Adding an existing URL", func(t *testing.T) {
+
+	})
+
+	t.Run("Empty fields", func(t *testing.T) {
+
+	})
+}
+
 func TestAdd(t *testing.T) {
 	db, path := setupDatabase(t)
 	shortServer := ShortServer{DB: db}
@@ -80,13 +129,13 @@ func TestAdd(t *testing.T) {
 	defer db.Close()
 	defer os.RemoveAll(path)
 
-	urlPair := URLPair{shorthand: "foo", target: "https://bar.local/"}
+	urlPair := URLPair{Shorthand: "foo", Target: "https://bar.local/"}
 
 	err := shortServer.Add(urlPair)
 	assert.NoError(t, err)
-	actual, err := shortServer.Lookup(urlPair.shorthand)
+	actual, err := shortServer.Lookup(urlPair.Shorthand)
 	assert.NoError(t, err)
-	assert.Equal(t, urlPair.target, actual)
+	assert.Equal(t, urlPair.Target, actual)
 }
 
 func setupDatabase(t *testing.T) (*bolt.DB, string) {
