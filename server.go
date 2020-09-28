@@ -1,13 +1,41 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+	"github.com/boltdb/bolt"
+	"github.com/valerius21/easy.xyz/shortener"
+	"log"
+	"net/http"
+)
 
 func main() {
 	// start with flags
-	flag.String("db", "./urls.db", "Path to the DB (will be created, if it does not exist")
-	flag.String("url", "easy.xyz", "host domain name")
+	dbpath := flag.String("db", "./urls.db", "Path to the DB (will be created, if it does not exist")
+	hostURL := flag.String("url", "easy.xyz", "host domain name")
+	port := flag.Int("port", 8000, "port on which the server listens")
+
+	db, err := bolt.Open(*dbpath, 0600, nil)
+
+	if err != nil {
+		log.Panic(err)
+	}
 
 	// Start HTTP ShortServer
+	shortServer := shortener.ShortServer{
+		DB:  db,
+		URL: *hostURL,
+	}
+
+	defer shortServer.DB.Close()
+
+	addHandler := func() http.Handler {
+		return http.HandlerFunc(shortServer.AddURL)
+	}
+
+	http.Handle("/add", addHandler())
+
+	http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 
 	// Provide Start Page
 

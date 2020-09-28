@@ -20,37 +20,34 @@ type URLPair struct {
 }
 
 // GetURL redirects to the requested URL
-func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) (targetURL string, err error) {
-	targetURL, err = s.Lookup(r.URL.String())
+func (s ShortServer) GetURL(w http.ResponseWriter, r *http.Request) {
+	targetURL, err := s.Lookup(r.URL.String())
 
 	if err != nil {
 		http.NotFound(w, r)
-		return "", err
+		return
 	}
 
 	http.Redirect(w, r, targetURL, 308)
-	return targetURL, nil
 }
 
 // AddURL adds an URL to the database.
-func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) (message string, err error) {
+func (s ShortServer) AddURL(w http.ResponseWriter, r *http.Request) {
 	var urlPair URLPair
 
-	err = json.NewDecoder(r.Body).Decode(&urlPair)
+	err := json.NewDecoder(r.Body).Decode(&urlPair)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return "", err
+		return
 	}
 
 	err = s.Add(urlPair)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
-		return "", err
+		return
 	}
-
-	return fmt.Sprintf("%s/%s", s.URL, urlPair.Shorthand), nil
 }
 
 // Lookup an URL for a given Shorthand
